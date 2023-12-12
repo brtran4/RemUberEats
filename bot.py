@@ -64,7 +64,6 @@ async def complete_order(interaction: Interaction, order_num: int):
 
     order = orders[order_num]
     del orders[order_num]
-    #TODO: ping the person who completed the order
     await interaction.response.send_message(f'{order["customer_id"].mention} Ding! Your order is ready!')
 
 
