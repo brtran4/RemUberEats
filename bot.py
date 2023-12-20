@@ -1,6 +1,8 @@
 import discord
 from discord import app_commands, Interaction, Color
 import os
+import json
+
 
 BOT_TOKEN = os.getenv(BOT_TOKEN)
 SERVER_ID = os.getenv(CHANNEL_ID)
@@ -9,17 +11,35 @@ intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
-orders = []
+
+def write_to_file(orders):
+    with open("orders.txt", "w") as file:
+        for order in orders:
+            file.write(json.dumps(order) + "\n")
+
+
+def read_from_file():
+    orders = []
+    try:
+        with open("orders.txt", "r") as file:
+            for order in file:
+                orders.append(json.loads(order))
+    except:
+        with open("orders.txt", "w") as file:
+            file.write("")
+    return orders
+
 
 @tree.command(name="order", description="Order an item from Rem.", guild=discord.Object(SERVER_ID))
 @app_commands.describe(item="The item you want to buy")
 @app_commands.describe(quantity="The quantity of the item you want to buy")
 async def order(interaction: Interaction, item: str, quantity: int):
+    orders = read_from_file()
     order = {
         "order": item,
         "quantity": quantity,
         "customer": interaction.user.global_name,
-        "customer_id": interaction.user,
+        "customer_id": interaction.user.id,
         "discord_name": interaction.user.name,
     }
     orders.append(order)
@@ -28,8 +48,8 @@ async def order(interaction: Interaction, item: str, quantity: int):
         await interaction.response.send_message(f"Arigatogozaimasu {interaction.user.global_name} senpai! I will ping you when he's done cooking desu~")
     else:
         await interaction.response.send_message("Order received! I'll send this over to Rem and I will ping you when he's done. Thank you for your patronage!")
+    write_to_file(orders)
     
-
 
 @tree.command(name="show_orders", description="Show all currently open orders", guild=discord.Object(SERVER_ID))
 async def show_orders(interaction: Interaction): 
@@ -39,14 +59,15 @@ async def show_orders(interaction: Interaction):
         color=Color.blue()
     )
 
+    orders = read_from_file()
+    if len(orders) == 0:
+        embed.add_field(name="", value="There are currently no orders.")
+
     counter = 0
     for order in orders:
         val = f'\#{counter}: {order["order"]} \({order["quantity"]}\) ordered by {order["customer"]}'
         embed.add_field(name="", value=val, inline=False)
         counter += 1
-    
-    if len(orders) == 0:
-        embed.add_field(name="", value="There are currently no orders.")
 
     await interaction.response.send_message(embed=embed)
 
@@ -57,14 +78,17 @@ async def complete_order(interaction: Interaction, order_num: int):
     if interaction.user.name != "remengis":
         await interaction.response.send_message("Hmmm... You're not Rem... Who are you? Sorry, you can't use this command!")
         return
-    
+
+    orders = read_from_file()
     if order_num >= len(orders):
         await interaction.response.send_message("This order doesn't exist. Try again.")
         return
 
     order = orders[order_num]
     del orders[order_num]
-    await interaction.response.send_message(f'{order["customer_id"].mention} Ding! Your order is ready!')
+    write_to_file(orders)
+
+    await interaction.response.send_message(f'<@{order["customer_id"]}> Ding! Your order is ready!')
 
 
 
