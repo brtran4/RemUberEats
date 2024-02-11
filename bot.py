@@ -130,14 +130,17 @@ async def claim_all_orders(interaction: Interaction):
     all_unclaimed_orders = read_from_file("unclaimed.txt")
     claimed_orders = [unclaimed for unclaimed in all_unclaimed_orders if unclaimed["discord_name"] == interaction.user.name]
 
+    if len(all_unclaimed_orders) != 0 and interaction.user.name == "remengis":
+        write_to_file("unclaimed.txt", [])
+        await interaction.response.send_message("Cleared unclaimed orders.")
+        return
+
     if len(claimed_orders) == 0:
         await interaction.response.send_message("You currently don't have any completed orders to claim.")
         return
 
     unclaimed_orders = filter(lambda order: order not in claimed_orders, all_unclaimed_orders)
-
     write_to_file("unclaimed.txt", unclaimed_orders)
-
     await interaction.response.send_message("Thank you for using Rem Uber Eats! We look forward to serving you again soon!")
 
 
