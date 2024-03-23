@@ -1,8 +1,9 @@
 import discord
 from discord import app_commands, Interaction, Color
+from typing import List
 import os
 import json
-
+import requests
 
 BOT_TOKEN = os.getenv(BOT_TOKEN)
 SERVER_ID = os.getenv(CHANNEL_ID)
@@ -10,6 +11,7 @@ SERVER_ID = os.getenv(CHANNEL_ID)
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+item_list = {}
 
 
 def write_to_file(file, orders):
@@ -28,6 +30,14 @@ def read_from_file(input_file):
         with open(input_file, "w") as file:
             file.write("")
     return orders
+
+# NOTE: The json will need to be manually updated every patch cycle that has a
+# new item. This can be found in the universalis api.
+def parse_items_json():
+    with open("items.json", encoding="UTF-8") as file:
+        items = json.load(file)
+        for item in items:
+            item_list[items[item]["en"]] = str(item)
 
 
 @tree.command(name="order", description="Order an item from Rem.", guild=discord.Object(SERVER_ID))
@@ -49,6 +59,15 @@ async def order(interaction: Interaction, item: str, quantity: int):
     else:
         await interaction.response.send_message("Order received! I'll send this over to Rem and I will ping you when he's done. Thank you for your patronage!")
     write_to_file("orders.txt", orders)
+
+
+@order.autocomplete("item")
+async def item_autocomplete(interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
+    data = []
+    for item in item_list.keys():
+        if current.lower() in item.lower():
+            data.append(app_commands.Choice(name=item, value=item))
+    return data
     
 
 @tree.command(name="show_orders", description="Show all currently open orders", guild=discord.Object(SERVER_ID))
@@ -111,8 +130,10 @@ async def show_unclaimed_orders(interaction: Interaction):
 
     if interaction.user.name != "remengis":
         unclaimed_orders = [unclaimed for unclaimed in all_unclaimed_orders if unclaimed["discord_name"] == interaction.user.name]
+        counter = 0
         for order in unclaimed_orders:
-            val = f'{order["order"]} \({order["quantity"]}\)'
+            val = f'\#{counter}: {order["order"]} \({order["quantity"]}\)'
+            counter += 1
             embed.add_field(name="", value=val, inline=False)
     else:
         counter = 0
@@ -141,13 +162,32 @@ async def claim_all_orders(interaction: Interaction):
 
     unclaimed_orders = filter(lambda order: order not in claimed_orders, all_unclaimed_orders)
     write_to_file("unclaimed.txt", unclaimed_orders)
-    await interaction.response.send_message("Thank you for using Rem Uber Eats! We look forward to serving you again soon!")
+    await interaction.response.send_message("All orders claimed. Thank you for using Rem Uber Eats! We look forward to serving you again soon!")
 
+
+@tree.command(name="claim_order", description="Claim one order", guild=discord.Object(SERVER_ID))
+@app_commands.describe(order_num="The order you want to claim")
+async def claim_order(interaction: Interaction, order_num: int):
+    all_unclaimed_orders = read_from_file("unclaimed.txt")
+
+    if len(all_unclaimed_orders) == 0:
+        await interaction.response.send_message("You currently don't have any completed orders to claim.")
+        return
+    elif order_num >= len(all_unclaimed_orders):
+        await interaction.response.send_message("Invalid order number. Verify that you used the correct number.")
+        return
+
+    order = all_unclaimed_orders[order_num]
+    del all_unclaimed_orders[order_num]
+    write_to_file("unclaimed.txt", all_unclaimed_orders)
+
+    await interaction.response.send_message(f'<@{order["customer_id"]}> Order claimed. Thank you for using Rem Uber Eats! We look forward to serving you again soon!')
 
 
 @client.event
 async def on_ready():
     await tree.sync(guild=discord.Object(id=SERVER_ID))
+    parse_items_json()
     print("Ready!")
 
 
