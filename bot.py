@@ -111,7 +111,7 @@ async def complete_order(interaction: Interaction, order_num: int):
     write_to_file("orders.txt", orders)
     write_to_file("unclaimed.txt", unclaimed_orders)
 
-    await interaction.response.send_message(f'<@{order["customer_id"]}> Ding! Your order is ready! Please make sure to use `/claim` when receiving your product from Rem!')
+    await interaction.response.send_message(f'<@{order["customer_id"]}> Ding! Your order is ready!')
 
 
 @tree.command(name="unclaimed_orders", description="Show your unclaimed orders", guild=discord.Object(SERVER_ID))
