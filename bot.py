@@ -1,12 +1,14 @@
 import discord
+from datetime import datetime
 from discord import app_commands, Interaction, Color
 from typing import List
+from cal import get_events, make_event
 import os
 import json
 import requests
 
 BOT_TOKEN = os.getenv(BOT_TOKEN)
-SERVER_ID = os.getenv(CHANNEL_ID)
+SERVER_ID = os.getenv(SERVER_ID)
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -54,10 +56,7 @@ async def order(interaction: Interaction, item: str, quantity: int):
     }
     orders.append(order)
 
-    if (str(interaction.user) == "bigpp"): # easter egg for boffa
-        await interaction.response.send_message(f"Arigatogozaimasu {interaction.user.global_name} senpai! I will ping you when he's done cooking desu~")
-    else:
-        await interaction.response.send_message("Order received! I'll send this over to Rem and I will ping you when he's done. Thank you for your patronage!")
+    await interaction.response.send_message("Order received! I'll send this over to Rem and I will ping you when he's done. Thank you for your patronage!")
     write_to_file("orders.txt", orders)
 
 
@@ -182,6 +181,22 @@ async def claim_order(interaction: Interaction, order_num: int):
     write_to_file("unclaimed.txt", all_unclaimed_orders)
 
     await interaction.response.send_message(f'<@{order["customer_id"]}> Order claimed. Thank you for using Rem Uber Eats! We look forward to serving you again soon!')
+
+
+# @tree.command(name="get_absences", description="Get upcoming absences", guild=discord.Object(SERVER_ID))
+# async def get_absences(interaction: Interaction):
+#     print(get_events())
+#     await interaction.response.send_message("template")
+
+
+@tree.command(name="absent", description="Submit your absent notice in MM/DD/YYYY format", guild=discord.Object(SERVER_ID))
+async def parse_absence(interaction: Interaction, month: str, day: str, year: str):
+    try:
+        make_event(interaction.user.global_name, datetime.strptime(f"{month}-{day}-{year}", "%m-%d-%Y"))
+        await interaction.response.send_message(f"Calendar event made for {month}/{day}/{year}")
+    except ValueError:
+        await interaction.response.send_message("Invalid date format. Please make sure you're using MM/DD/YYYY format.", ephemeral=True)
+
 
 
 @client.event
