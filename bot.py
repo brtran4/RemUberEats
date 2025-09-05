@@ -5,10 +5,15 @@ from typing import List
 from cal import get_events, make_event
 import os
 import json
-import requests
 
-BOT_TOKEN = os.getenv(BOT_TOKEN)
-SERVER_ID = os.getenv(SERVER_ID)
+if os.getenv("BOT_TOKEN"):
+    BOT_TOKEN = os.getenv("BOT_TOKEN")
+else:
+    raise ValueError("Bot token not supplied")
+if os.getenv("SERVER_ID"):
+    SERVER_ID = os.getenv("SERVER_ID")
+else:
+    raise ValueError("Server id not supplied")
 
 intents = discord.Intents.all()
 client = discord.Client(intents=intents)
@@ -56,9 +61,10 @@ async def order(interaction: Interaction, item: str, quantity: int):
     }
     orders.append(order)
 
-    await interaction.response.send_message("Order received! I'll send this over to Rem and I will ping you when he's done. Thank you for your patronage!")
+    await interaction.response.send_message("Order received! I'll send this over to Rem and I will ping you when he's done. Thank you for your patronage!", ephemeral=True)
     write_to_file("orders.txt", orders)
 
+    await send_dm(order)
 
 @order.autocomplete("item")
 async def item_autocomplete(interaction: Interaction, current: str) -> List[app_commands.Choice[str]]:
@@ -67,10 +73,10 @@ async def item_autocomplete(interaction: Interaction, current: str) -> List[app_
         if current.lower() in item.lower():
             data.append(app_commands.Choice(name=item, value=item))
     return data
-    
+
 
 @tree.command(name="show_orders", description="Show all currently open orders", guild=discord.Object(SERVER_ID))
-async def show_orders(interaction: Interaction): 
+async def show_orders(interaction: Interaction):
     embed=discord.Embed(
         title="Current Orders",
         description="Here are the currently open orders:",
@@ -87,7 +93,7 @@ async def show_orders(interaction: Interaction):
         embed.add_field(name="", value=val, inline=False)
         counter += 1
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @tree.command(name="complete_order", description="Complete an order", guild=discord.Object(SERVER_ID))
@@ -95,12 +101,12 @@ async def show_orders(interaction: Interaction):
 async def complete_order(interaction: Interaction, order_num: int):
     unclaimed_orders = read_from_file("unclaimed.txt")
     if interaction.user.name != "remengis":
-        await interaction.response.send_message("Hmmm... You're not Rem... Who are you? Sorry, you can't use this command!")
+        await interaction.response.send_message("Hmmm... You're not Rem... Who are you? Sorry, you can't use this command!", ephemeral=True)
         return
 
     orders = read_from_file("orders.txt")
     if order_num >= len(orders):
-        await interaction.response.send_message("This order doesn't exist. Try again.")
+        await interaction.response.send_message("This order doesn't exist. Try again.", ephemeral=True)
         return
 
     order = orders[order_num]
@@ -141,7 +147,7 @@ async def show_unclaimed_orders(interaction: Interaction):
             counter += 1
             embed.add_field(name="", value=val, inline=False)
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 @tree.command(name="claim_all_orders", description="Claim all of your completed orders", guild=discord.Object(SERVER_ID))
@@ -152,7 +158,7 @@ async def claim_all_orders(interaction: Interaction):
 
     if len(all_unclaimed_orders) != 0 and interaction.user.name == "remengis":
         write_to_file("unclaimed.txt", [])
-        await interaction.response.send_message("Cleared unclaimed orders.")
+        await interaction.response.send_message("Cleared unclaimed orders.", ephemeral=True)
         return
 
     if len(claimed_orders) == 0:
@@ -182,6 +188,10 @@ async def claim_order(interaction: Interaction, order_num: int):
 
     await interaction.response.send_message(f'<@{order["customer_id"]}> Order claimed. Thank you for using Rem Uber Eats! We look forward to serving you again soon!')
 
+# send Rem a DM about a new order
+async def send_dm(order):
+    user = await client.fetch_user("104917239962046464")
+    await user.send(f"{order["customer"]} submitted an order for {order["quantity"]} {order["order"]}")
 
 # @tree.command(name="get_absences", description="Get upcoming absences", guild=discord.Object(SERVER_ID))
 # async def get_absences(interaction: Interaction):

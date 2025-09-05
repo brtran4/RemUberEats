@@ -1,0 +1,8 @@
+services:
+  python-app:
+    container_name: RemUberEats
+    build: .
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      CHANNEL_ID: ${CHANNEL_ID}
+      SERVER_ID: ${SERVER_ID}
