@@ -388,6 +388,7 @@ async def absent(interaction: Interaction, date: str):
 )
 async def view_absences(interaction: Interaction):
     absences = filter_past_absences()
+    absences.sort(key=lambda a: datetime.strptime(a["date"], "%m/%d/%Y"))
 
     embed = discord.Embed(
         title="Absences",
