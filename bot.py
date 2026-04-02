@@ -11,7 +11,7 @@ load_dotenv()
 
 BOT_TOKEN: str = os.getenv("BOT_TOKEN") or ""
 SERVER_ID: str = os.getenv("SERVER_ID") or ""
-ABSENCE_CHANNEL_ID: str = os.getenv("ABSENCE_CHANNEL_ID") or "1261489115841564682"
+ABSENCE_CHANNEL_ID: str = os.getenv("ABSENCE_CHANNEL_ID") or ""
 
 if not BOT_TOKEN:
     raise ValueError("Bot token not supplied")
