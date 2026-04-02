@@ -1,1 +1,10 @@
 secrets.txt
+.modules/
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.env
+absences.txt
+orders.txt
+unclaimed.txt
