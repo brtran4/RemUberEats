@@ -1,4 +1,6 @@
-FROM python:3.12
+FROM python:3.14
+
+ENV TZ=America/Los_Angeles
 
 # install required packages
 RUN --mount=type=bind,source=requirements.txt,target=/tmp/requirements.txt \
