@@ -376,6 +376,11 @@ async def absent(interaction: Interaction, date: str):
         ephemeral=True,
     )
 
+    if parsed_date == today and ABSENCE_CHANNEL_ID:
+        channel = client.get_channel(int(ABSENCE_CHANNEL_ID))
+        if channel and isinstance(channel, discord.TextChannel):
+            await channel.send(f"Attention: <@{user_id}> is absent today!")
+
 
 @tree.command(
     name="view_absences",
