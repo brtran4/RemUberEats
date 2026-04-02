@@ -358,9 +358,8 @@ async def absent(interaction: Interaction, date: str):
         return
 
     today = datetime.now().date()
-    yesterday = (datetime.now() - timedelta(days=1)).date()
 
-    if parsed_date < yesterday:
+    if parsed_date < today:
         await interaction.response.send_message(
             "Cannot record an absence for a past date.",
             ephemeral=True,
