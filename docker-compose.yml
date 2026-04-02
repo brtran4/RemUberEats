@@ -2,6 +2,10 @@ services:
   python-app:
     container_name: RemUberEats
     build: .
+    volumes:
+      - ./absences.txt:/app/absences.txt
+      - ./orders.txt:/app/orders.txt
+      - ./unclaimed.txt:/app/unclaimed.txt
     environment:
       BOT_TOKEN: ${BOT_TOKEN}
       CHANNEL_ID: ${CHANNEL_ID}
