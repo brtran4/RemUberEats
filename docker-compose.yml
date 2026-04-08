@@ -3,6 +3,8 @@ services:
     container_name: RemUberEats
     build: .
     volumes:
+      # NOTE: Ensure txt files exist on host before running docker compose
+      # If they don't exist, docker will create directories instead of files
       - ./absences.txt:/app/absences.txt
       - ./orders.txt:/app/orders.txt
       - ./unclaimed.txt:/app/unclaimed.txt

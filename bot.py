@@ -6,6 +6,13 @@ from typing import List, Optional
 import os
 import json
 import asyncio
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -376,9 +383,13 @@ async def absent(interaction: Interaction, date: str):
     )
 
     if parsed_date == today and ABSENCE_CHANNEL_ID:
+        logger.info(f"DEBUG: Attempting to send to channel: {ABSENCE_CHANNEL_ID}")
         channel = client.get_channel(int(ABSENCE_CHANNEL_ID))
+        logger.info(f"DEBUG: Channel found: {channel}")
         if channel and isinstance(channel, discord.TextChannel):
             await channel.send(f"Attention: <@{user_id}> is absent today!")
+        else:
+            logger.info(f"DEBUG: Channel not found or not a TextChannel")
 
 
 @tree.command(
@@ -410,7 +421,7 @@ async def view_absences(interaction: Interaction):
 async def on_ready():
     await tree.sync(guild=discord.Object(id=int(SERVER_ID)))
     parse_items_json()
-    print("Ready!")
+    logger.info("Ready!")
     asyncio.create_task(schedule_past_absences_cleanup())
 
 
@@ -423,9 +434,6 @@ async def schedule_past_absences_cleanup():
         seconds_until_midnight = (tomorrow - now).total_seconds()
         await asyncio.sleep(seconds_until_midnight)
 
-        filter_past_absences()
-        print("Cleaned up past absences")
-
         todays_absences = get_todays_absences()
         if todays_absences and ABSENCE_CHANNEL_ID:
             channel = client.get_channel(int(ABSENCE_CHANNEL_ID))
@@ -437,6 +445,9 @@ async def schedule_past_absences_cleanup():
                     await channel.send(
                         f"Attention: {users_mentions} {verb} absent today!"
                     )
+
+        filter_past_absences()
+        logger.info("Cleaned up past absences")
 
 
 if __name__ == "__main__":
